@@ -179,13 +179,14 @@ class Histo_Graph():
             if (self.cur_key_index < len(self.keys)) and (self.elapsed > self.play_speed):
                 key = self.keys[self.cur_key_index ]
                 self.arr_copy[key[0]] = key[1]
-                self.elapsed = 0
                 self.cur_key_index = self.cur_key_index + 1
+                self.arr_copy[key[0]] = key[1]
+                self.elapsed = 0
             else:
                 self.elapsed = self.elapsed + dt
         # flags = imgui.WINDOW_NO_TITLE_BAR = 1
 
-        imgui.begin("Plot example", flags = imgui.WINDOW_NO_TITLE_BAR)
+        imgui.begin("Merge Sort", flags = imgui.WINDOW_NO_TITLE_BAR)
 
         imgui.plot_histogram(
         "",
@@ -251,15 +252,33 @@ class Quick_Sort():
     def __init__(self, window, data_size = 100):
         self.window = window
         self.data_size = data_size
+        self.keys = []
         self.arr = []
-        self.arr_copy = array('f', self.arr.copy())
         self.build_starter()
+        self.arr_copy = array("f", self.arr.copy())
+        self.quicksort(0, len(self.arr)-1, self.arr)
+        self.elapsed = 0
+        self.cur_key_index = 0
+        self.play_speed = 0.0001
+        self.start = False
+
 
 
 
     def draw(self, dt):
         self.curr_size = imgui.core.get_window_size()
         window_size = glfw.get_window_size(self.window)
+
+        if self.start:
+            if self.start:
+                if (self.cur_key_index < len(self.keys)) and (self.elapsed > self.play_speed):
+                    key = self.keys[self.cur_key_index ]
+                    self.arr_copy[key[0]] = key[1]
+                    self.elapsed = 0
+                    self.cur_key_index = self.cur_key_index + 1
+                else:
+                    self.elapsed = self.elapsed + dt
+
         imgui.begin("Plot example", flags = imgui.WINDOW_NO_TITLE_BAR)
 
         imgui.plot_histogram(
@@ -278,9 +297,13 @@ class Quick_Sort():
         for i in range(l, r):
             if nums[i] <= pivot:
                 # Swapping values smaller than the pivot to the front
+                self.keys.append([i,nums[ptr]])
+                self.keys.append([ptr, nums[i]])
                 nums[i], nums[ptr] = nums[ptr], nums[i]
                 ptr += 1
         # Finally swapping the last element with the pointer indexed number
+        self.keys.append([ptr, nums[r]])
+        self.keys.append([r, nums[ptr]])
         nums[ptr], nums[r] = nums[r], nums[ptr]
         return ptr
  
@@ -296,10 +319,12 @@ class Quick_Sort():
             pi = self.partition(l, r, nums)
             self.quicksort(l, pi-1, nums)  # Recursively sorting the left values
             self.quicksort(pi+1, r, nums)  # Recursively sorting the right values
+          
         return nums
 
     def build_starter(self):
-        for i in range(self.data_size):
+        
+        for i in range(0, self.data_size):
             self.arr.append(random.randint(10,100))
     
     # example = [4, 5, 1, 2, 3]
