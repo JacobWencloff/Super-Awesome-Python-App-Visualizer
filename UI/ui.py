@@ -13,14 +13,15 @@ class UI():
     def __init__(self, window):
         self.window = window
         # self.quick_sort = quick_sort(window)
-        self.histogram = Histo_Graph(window)
         self.editor = Editor(window)
-        self.quick_sort = Quick_Sort(window)
+        self.histogram = Histo_Graph(window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
+        self.quick_sort = Quick_Sort(window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
         self.speed25_enable = False
         self.speed50_enable = False
         self.speed75_enable = False
         self.speed1_enable = True
         self.algo_to_display = None
+        self.did_edit_submit = False
 
 
         
@@ -39,6 +40,8 @@ class UI():
             self.histogram.play_speed = .0001
             # print(self.histogram.play_speed)
 
+
+
         window_size = glfw.get_window_size(self.window)
         imgui.set_next_window_position(0,0)
         imgui.set_next_window_size(window_size[0], 200)
@@ -47,23 +50,32 @@ class UI():
         curr_size = imgui.core.get_window_size()
         imgui.begin_child('Open Editor', height=100,width=100,border=False)
 
+        
         if imgui.button('Play >'):
             if self.algo_to_display == "Merge":
+                self.histogram.__init__(self.window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
                 self.histogram.start = True
             if self.algo_to_display == "Quick":
                 self.quick_sort.start = True
 
-        if imgui.button("Reset"):
-            self.histogram.start = False
-            self.histogram.__init__(self.window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
-            
-            if self.histogram.data_size != '':
+        if imgui.button("Reset") or self.did_edit_submit:
+
+            if self.algo_to_display == "Merge":
+                self.histogram.start = False
+                self.histogram.__init__(self.window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
                 self.histogram.data_size = self.editor.data_size
-            if self.histogram.range_top != '': 
                 self.histogram.range_top = self.editor.range_top
-            if self.histogram.range_bot != '':
                 self.histogram.range_bot = self.editor.range_bot
-            self.histogram.build_stater()
+                self.histogram.build_stater()
+
+            if self.algo_to_display == "Quick":
+                self.quick_sort.start = False
+                self.quick_sort.__init__(self.window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
+                self.quick_sort.data_size = self.editor.data_size
+                self.quick_sort.range_top = self.editor.range_top
+                self.quick_sort.range_bot = self.editor.range_bot
+                self.quick_sort.build_starter()
+        
 
         if imgui.button('Select Algo'):
             imgui.open_popup('Algo-Popup')
@@ -113,6 +125,9 @@ class Editor():
         self.x = 0
         self.y = 0
         self.z = 0
+        self.x_check = False
+        self.y_check = False
+        self.z_check = False
 
 
     def draw(self):
@@ -121,17 +136,17 @@ class Editor():
 
         imgui.push_id("0")
         imgui.text('Enter number of Data Points (INTs):')
-        changed, self.z = imgui.input_int('', self.data_size)
+        changed, self.z = imgui.input_int('', self.z)
         imgui.pop_id()
 
         imgui.push_id("1")
         imgui.text('Enter Value Range bottom')
-        changed, self.y = imgui.input_int('', self.range_bot)
+        changed, self.y = imgui.input_int('', self.y)
         imgui.pop_id()
 
         imgui.push_id("2")
         imgui.text('Enter Value Range Top')
-        changed, self.x = imgui.input_int('', self.range_top)
+        changed, self.x = imgui.input_int('', self.x)
         imgui.pop_id()
 
         if imgui.button("submit"):
@@ -143,11 +158,18 @@ class Editor():
         self.range_top = x
         self.range_bot = y
         self.data_size = z
+        if self.x == 0:
+            self.range_top = 100
+        if self.y == 0:
+            self.range_bot = 10
+        if self.z == 0:
+            self.data_size = 100
+        
         print(self.x, self.y, self.z)
 
 
 class Histo_Graph():
-    def __init__(self, window, data_size=100, range_top=100, range_bot=10):
+    def __init__(self, window, data_size, range_top, range_bot):
         self.window = window
         self.keys = []
         self.arr = []
@@ -184,7 +206,6 @@ class Histo_Graph():
                 self.elapsed = 0
             else:
                 self.elapsed = self.elapsed + dt
-        # flags = imgui.WINDOW_NO_TITLE_BAR = 1
 
         imgui.begin("Merge Sort", flags = imgui.WINDOW_NO_TITLE_BAR)
 
@@ -227,9 +248,8 @@ class Histo_Graph():
                 start += 1
                 mid += 1
                 start2 += 1
+
         
-
-
     def mergeSort(self, arr, l, r):
         if (l < r):
             m = l + (r - l) // 2
@@ -242,16 +262,18 @@ class Histo_Graph():
     def build_stater(self):
         print(self.data_size)
         for i in range(0, self.data_size):
-            self.arr.append(random.randint(10, 100))
+            self.arr.append(random.randint(self.range_bot, self.range_top))
 
 
 
 # ---- Quick Sort -----
 
 class Quick_Sort():
-    def __init__(self, window, data_size = 100):
+    def __init__(self, window, data_size, range_top, range_bot):
         self.window = window
         self.data_size = data_size
+        self.range_top = range_top
+        self.range_bot = range_bot
         self.keys = []
         self.arr = []
         self.build_starter()
@@ -259,25 +281,22 @@ class Quick_Sort():
         self.quicksort(0, len(self.arr)-1, self.arr)
         self.elapsed = 0
         self.cur_key_index = 0
-        self.play_speed = 0.0001
         self.start = False
-
-
-
+        self.play_speed = .000001
 
     def draw(self, dt):
         self.curr_size = imgui.core.get_window_size()
         window_size = glfw.get_window_size(self.window)
 
+
         if self.start:
-            if self.start:
-                if (self.cur_key_index < len(self.keys)) and (self.elapsed > self.play_speed):
-                    key = self.keys[self.cur_key_index ]
-                    self.arr_copy[key[0]] = key[1]
-                    self.elapsed = 0
-                    self.cur_key_index = self.cur_key_index + 1
-                else:
-                    self.elapsed = self.elapsed + dt
+            if (self.cur_key_index < len(self.keys)) and (self.elapsed > self.play_speed):
+                key = self.keys[self.cur_key_index ]
+                self.arr_copy[key[0]] = key[1]
+                self.elapsed = 0
+                self.cur_key_index = self.cur_key_index + 1
+            else:
+                self.elapsed = self.elapsed + dt
 
         imgui.begin("Plot example", flags = imgui.WINDOW_NO_TITLE_BAR)
 
@@ -325,7 +344,7 @@ class Quick_Sort():
     def build_starter(self):
         
         for i in range(0, self.data_size):
-            self.arr.append(random.randint(10,100))
+            self.arr.append(random.randint(self.range_bot,self.range_top))
     
     # example = [4, 5, 1, 2, 3]
     # result = [1, 2, 3, 4, 5]
