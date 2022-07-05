@@ -33,10 +33,6 @@ def main():
         dt = (now - last_frame_time) / 1000
         last_frame_time = now
 
-    #     imgui.new_frame()
-    #     #UI is here
-
-        # ui()
         nav.draw(dt)
 
         gl.glClearColor(.3, .3, .3, 1)

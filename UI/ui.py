@@ -129,7 +129,7 @@ class UI():
         if self.algo_to_display == 'a_star':
             imgui.set_next_window_size(window_size[0]-300, window_size[1]-curr_size[1])
             imgui.set_next_window_position(300, curr_size[1])
-            self.a_star.draw()
+            self.a_star.draw((300 + 25,curr_size[1]+25))
 
 
 class Editor():
@@ -365,15 +365,16 @@ class A_start_helper():
         self
         self.window = window
         self.a_star = a_star_build()
-    def draw(self):
+    def draw(self, pos):
         curr_size = imgui.core.get_window_size()
         window_size = self.window.get_size()
         
         WIDTH = int(window_size[1]-curr_size[1]    )      
-        WIN = pygame.display.set_mode((WIDTH,WIDTH))
+        # WIN = pygame.display.set_mode((WIDTH,WIDTH))
 
         imgui.begin("A*", flags= imgui.WINDOW_NO_TITLE_BAR)
+        # imgui.get_window_draw_list().add_line(0, 0, 800, 800, imgui.get_color_u32_rgba(1,1,1,1), 3)
 
-        self.a_star.main(WIN, WIDTH)
+        self.a_star.main(None, WIDTH, pos)
 
         imgui.end()

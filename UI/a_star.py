@@ -2,21 +2,23 @@ from ast import Lambda
 import pygame
 import math
 from queue import PriorityQueue
+import imgui
 
 # WIDTH = 800
 # WIN = pygame.display.set_mode((WIDTH,WIDTH))
 # pygame.display.set_caption('A* Path Finding')
 
-RED = (255,0,0)
-GREEN = (0,255,0)
-BLUE = (0,0,255)
-YELLOW = (255,255,0)
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-PURPLE = (128, 0, 128)
-ORANGE = (255,165,0)
-GREY =(128,128,128)
-TURQUOISE = (64,224,208)
+RED =       (1,0,0,1)
+GREEN =     (0,1,0,1)
+BLUE =      (0,0,1,1)
+YELLOW =    (1,1,0,1)
+WHITE =     (1,1,1,1)
+BLACK =     (0,0,0,1)
+PURPLE =    ( 0.5, 0, 0.5, 1)
+ORANGE =    (1,0.6,0,1)
+GREY =      (0.5,0.5,0.5,1)
+TURQUOISE = (0.25,0.86,0.78,1)
+
 
 class Spot():
     def __init__(self, row, col, width, total_rows):
@@ -68,8 +70,19 @@ class Spot():
     def make_path(self):
         self.color = PURPLE
 
-    def draw(self, WIN):
-        pygame.draw.rect(WIN, self.color, (self.x, self.y, self.width, self.width))
+    def draw(self, win, rows, width, pos):
+        gap = width // rows
+
+        x = (self.x * gap) + pos[0]
+        y = (self.y * gap) + pos[1]
+
+        end_x = x + gap
+        end_y = y + gap
+        # pygame.draw.rect(WIN, self.color, (self.x, self.y, self.width, self.width))
+
+        col_t = self.color
+        color = imgui.get_color_u32_rgba(col_t[0], col_t[1], col_t[2], col_t[3])
+        imgui.get_window_draw_list().add_rect_filled(x, y, end_x, end_y, color)
 
     def update_neighbors(self, grid):
         self.neighbors = []
@@ -85,67 +98,62 @@ class Spot():
         if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
             self.neighbors.append(grid[self.row][self.col - 1])
 
-    def __lt__(self, other):
-        return False
+  
 
 
 class a_star_build():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, window_width = 50) -> None:
+        self.ROWS = 50
+        self.width = window_width
+        self.grid = self.make_grid(self.ROWS, self.width)
+
+        self.start = None
+        self.end = None
+
+        self.run = True
+        self.started = False
 
     def h(self, p1, p2):
         x1, y1 = p1
         x2, y2 = p2
         return abs(x1-x2) + abs(y1-y2)
 
-    def reconstruct_path(self, came_from, current, draw):
+    def reconstruct_path(self, came_from, current, win, grid, rows, width, pos):
         while current in came_from:
             current = came_from[current]
             current.make_path()
-            draw()
+            self.draw(win, grid, rows, width ,pos)
+# self.algorithm( self.grid, self.start, self.end, win, self.ROWS, width, pos)
+    def algorithm(self, grid, start, end, win, rows, width, pos):
+        
 
-    def algorithm(self, draw, grid, start, end):
-        count = 0
-        open_set = PriorityQueue()
-        open_set.put((0, count, start))
-        came_from = {}
-        g_score = {spot: float("inf") for row in grid for spot in row}
-        g_score[start] = 0
-        f_score = {spot: float("inf") for row in grid for spot in row}
-        f_score[start] = self.h(start.get_pos(), end.get_pos())
+        # while not open_set.empty():
 
-        open_set_hash = {start}
+        self.current = self.open_set.get()[2]
+        self.open_set_hash.remove(self.current)
 
-        while not open_set.empty():
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
+        if self.current == end:
+            self.reconstruct_path(self.came_from, end, win, grid, rows, width ,pos)
+            self.started = False
+            return True
 
-            current = open_set.get()[2]
-            open_set_hash.remove(current)
+        for neighbor in self.current.neighbors:
+            temp_g_score = self.g_score[self.current] + 1
 
-            if current == end:
-                self.reconstruct_path(came_from, end, draw)
-                return True
+            if temp_g_score < self.g_score[neighbor]:
+                self.came_from[neighbor] = self.current
+                self.g_score[neighbor] = temp_g_score
+                self.f_score[neighbor] = temp_g_score + self.h(neighbor.get_pos(), end.get_pos())
+                if neighbor not in self.open_set_hash:
+                    self.count += 1
+                    self.open_set.put((self.f_score[neighbor], self.count, neighbor))
+                    self.open_set_hash.add(neighbor)
+                    neighbor.make_open()
+        self.draw(win, grid, rows, width ,pos)
 
-            for neighbor in current.neighbors:
-                temp_g_score = g_score[current] + 1
+        if self.current != start:
+            self.current.make_closed()
 
-                if temp_g_score < g_score[neighbor]:
-                    came_from[neighbor] = current
-                    g_score[neighbor] = temp_g_score
-                    f_score[neighbor] = temp_g_score + self.h(neighbor.get_pos(), end.get_pos())
-                    if neighbor not in open_set_hash:
-                        count += 1
-                        open_set.put((f_score[neighbor], count, neighbor))
-                        open_set_hash.add(neighbor)
-                        neighbor.make_open()
-            draw()
-
-            if current != start:
-                current.make_closed()
-
-        return False
 
     def make_grid(self ,rows, width):
         grid = []
@@ -158,22 +166,24 @@ class a_star_build():
         
         return grid
 
-    def draw_grid(self, win, rows,width):
+    def draw_grid(self, win, rows,width, pos):
+        x_off, y_off = pos[0], pos[1]
         gap = width // rows
         for i in range(rows):
-            pygame.draw.line(win, GREY, (0, i * gap), (width, i * gap))
+            # pygame.draw.line(win, GREY, (0, i * gap), (width, i * gap))
+            imgui.get_window_draw_list().add_line(x_off, y_off + i * gap, x_off + width, y_off + i * gap, imgui.get_color_u32_rgba(0,0,0,1))
             for j in range(rows):
-                pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, width))
+                # pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, width))
+                imgui.get_window_draw_list().add_line(x_off + j * gap, y_off, x_off + j * gap, y_off + width,imgui.get_color_u32_rgba(0,0,0,1))
 
-    def draw(self, win, grid, rows, width):
-        win.fill(WHITE)
-
+    def draw(self, win, grid, rows, width, pos):
+        # win.fill(WHITE)
         for row in grid:
             for spot in row:
-                spot.draw(win)
+                spot.draw(win, rows, width, pos)
 
-        self.draw_grid(win, rows, width)
-        pygame.display.update()
+        self.draw_grid(win, rows, width, pos)
+        # pygame.display.update()
 
     def get_clicked_pos(self, pos, rows, width):
         gap = width // rows
@@ -184,61 +194,77 @@ class a_star_build():
 
         return row, col
 
-    def main(self, win, width):
-        ROWS = 50
-        grid = self.make_grid(ROWS, width)
+    def main(self, win, width, pos):
+        # self.ROWS = 50
+        # self.grid = self.make_grid(self.ROWS, width)
 
-        start = None
-        end = None
+        # self.start = None
+        # self.end = None
 
-        run = True
-        started = False
-        while run:
-            self.draw(win, grid, ROWS, width)
+        # self.run = True
+        # self.started = False
+        if self.run:
+            if self.started:
+                self.algorithm( self.grid, self.start, self.end, win, self.ROWS, width, pos)
+                
+            else:
+                self.draw(win, self.grid, self.ROWS, width, pos)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
 
-                if started:
-                    continue
 
                 if pygame.mouse.get_pressed()[0]:
-                    pos = pygame.mouse.get_pos()
-                    row, col = self.get_clicked_pos(pos, ROWS, width)
-                    spot = grid[row][col]
-                    if not start and spot != end:
-                        start = spot
-                        start.make_start()
-                    elif not end and spot != start:
-                        end = spot
-                        end.make_end()
-                    elif spot != end and spot != start:
+                    m_pos = pygame.mouse.get_pos() 
+                    adj_m_pos = (int(m_pos[0]-pos[0]), int(m_pos[1]-pos[1]))
+                    row, col = self.get_clicked_pos(adj_m_pos, self.ROWS, width)
+                    if (row < 0 or col < 0) or (row > self.ROWS or col > self.ROWS):
+                        break
+                    spot = self.grid[row][col]
+                    if not self.start and spot != self.end:
+                        self.start = spot
+                        self.start.make_start()
+                    elif not self.end and spot != self.start:
+                        self.end = spot
+                        self.end.make_end()
+                    elif spot != self.end and spot != self.start:
                         spot.make_barrier()
 
                 elif pygame.mouse.get_pressed()[2]:
-                    pos = pygame.mouse.get_pos()
-                    row, col = self.get_clicked_pos(pos, ROWS, width)
-                    spot = grid[row][col]
+                    m_pos = pygame.mouse.get_pos() 
+                    adj_m_pos = (int(m_pos[0]-pos[0]), int(m_pos[1]-pos[1]))
+                    row, col = self.get_clicked_pos(adj_m_pos, self.ROWS, width)
+                    if (row < 0 or col < 0) or (row > self.ROWS or col > self.ROWS):
+                        break
+                    spot = self.grid[row][col]
                     spot.reset()
-                    if spot == start:
-                        start = None
-                    elif spot == end:
-                        end == None
+                    if spot == self.start:
+                       self.start = None
+                    elif spot == self.end:
+                        self.end == None
 
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE and not started:
-                        for row in grid:
+                    if event.key == pygame.K_SPACE and not self.started:
+                        for row in self.grid:
                             for spot in row:
-                                spot.update_neighbors(grid)
-                        self.algorithm(lambda: self.draw(win, grid, ROWS, width) , grid, start, end)
+                                spot.update_neighbors(self.grid)
+                            self.started = True
+                        
+                        self.count = 0
+                        self.open_set = PriorityQueue()
+                        self.open_set.put((0, self.count, self.start))
+                        self.came_from = {}
+                        self.g_score = {spot: float("inf") for row in self.grid for spot in row}
+                        self.g_score[self.start] = 0
+                        self.f_score = {spot: float("inf") for row in self.grid for spot in row}
+                        self.f_score[self.start] = self.h(self.start.get_pos(), self.end.get_pos())
+
+                        self.open_set_hash = {self.start}
+                        # self.algorithm( self.grid, self.start, self.end, win, self.ROWS, width, pos)
                 
                     if event.key == pygame.K_c:
-                        start = None
-                        end = None
-                        grid = self.make_grid(ROWS, width)
-
-        pygame.quit()
+                        self.__init__()
 
 # x = a_star_build()
 
-# x.draw()
+# x.main()
