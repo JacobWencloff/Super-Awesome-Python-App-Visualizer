@@ -6,6 +6,9 @@ from imgui.integrations.glfw import GlfwRenderer
 import glfw 
 from array import array
 
+from UI.a_star import *
+
+
 
 # from UI.a_star import *
 
@@ -21,6 +24,7 @@ class UI():
         self.editor = Editor(window)
         self.histogram = Histo_Graph(window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
         self.quick_sort = Quick_Sort(window, self.editor.data_size, self.editor.range_top, self.editor.range_bot)
+        self.a_star = A_start_helper(window)
         self.speed25_enable = False
         self.speed50_enable = False
         self.speed75_enable = False
@@ -101,10 +105,10 @@ class UI():
         imgui.end_child()
         imgui.same_line()
         imgui.begin_child("Set Speed")
-        _ , self.speed25_enable =  imgui.checkbox("Speed 25%", self.speed25_enable)
-        _ , self.speed50_enable =  imgui.checkbox("Speed 50%", self.speed50_enable)
-        _ , self.speed75_enable =  imgui.checkbox("Speed 75%", self.speed75_enable)
-        _ , self.speed1_enable =  imgui.checkbox("Speed WINDE OPEN", self.speed1_enable)
+        _ , self.speed25_enable =  imgui.checkbox("Slow", self.speed25_enable)
+        _ , self.speed50_enable =  imgui.checkbox("Kinda slow", self.speed50_enable)
+        _ , self.speed75_enable =  imgui.checkbox("kinda fast", self.speed75_enable)
+        _ , self.speed1_enable =  imgui.checkbox("MEGA FAST", self.speed1_enable)
         imgui.end_child()
         imgui.end()
 
@@ -122,7 +126,11 @@ class UI():
             imgui.set_next_window_position(300, curr_size[1])
             self.quick_sort.draw(dt)
 
-     
+        if self.algo_to_display == 'a_star':
+            imgui.set_next_window_size(window_size[0]-300, window_size[1]-curr_size[1])
+            imgui.set_next_window_position(300, curr_size[1])
+            self.a_star.draw()
+
 
 class Editor():
     def __init__(self, window):
@@ -351,11 +359,21 @@ class Quick_Sort():
         for i in range(0, self.data_size):
             self.arr.append(random.randint(self.range_bot,self.range_top))
 
-class Draw_A_star():
-    def __init__(self):
-        pass
 
-
-    
-
+class A_start_helper():
+    def __init__(self, window) -> None:
+        self
+        self.window = window
+        self.a_star = a_star_build()
+    def draw(self):
+        curr_size = imgui.core.get_window_size()
+        window_size = self.window.get_size()
         
+        WIDTH = int(window_size[1]-curr_size[1]    )      
+        WIN = pygame.display.set_mode((WIDTH,WIDTH))
+
+        imgui.begin("A*", flags= imgui.WINDOW_NO_TITLE_BAR)
+
+        self.a_star.main(WIN, WIDTH)
+
+        imgui.end()

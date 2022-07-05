@@ -46,40 +46,6 @@ def main():
         impl.render(imgui.get_draw_data())
         pygame.display.flip()
 
-    # impl.shutdown()
-    # glfw.terminate()
-
-
-# def glfw_init():
-#     if not glfw.init():
-#         print('Could not initialize OpenGl context')
-#         exit(1)
-
-#     glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-#     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
-#     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-
-#     glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
-
-#     monitor = glfw.get_primary_monitor()
-
-#     video_mode = glfw.get_video_mode(monitor)
-
-#     width, height = video_mode.size.width, video_mode.size.height
-#     window_name = 'test'
-    
-#     window = glfw.create_window(
-#         int(width) , int(height), window_name, monitor, None 
-#     )
-#     glfw.make_context_current(window)
-
-#     if not window:
-#         glfw.terminate()
-#         print('Could not initialize')
-#         exit(1)
-
-#     return window
-
 
 
 if __name__ == "__main__":
