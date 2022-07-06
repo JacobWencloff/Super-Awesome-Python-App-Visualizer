@@ -29,6 +29,7 @@ def main():
             impl.process_event(event)
 
         imgui.new_frame()
+        
         now = pygame.time.get_ticks()
         dt = (now - last_frame_time) / 1000
         last_frame_time = now

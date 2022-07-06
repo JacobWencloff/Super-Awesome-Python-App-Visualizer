@@ -37,16 +37,20 @@ class UI():
     def draw(self, dt):
 
         if self.speed25_enable:
-            self.histogram.play_speed = .1
+            self.histogram.play_speed = .05
+            self.quick_sort.play_speed =.05
             # print(self.histogram.play_speed)
         if self.speed50_enable:
-            self.histogram.play_speed = .05
+            self.histogram.play_speed = .025
+            self.quick_sort.play_speed = .025
             # print(self.histogram.play_speed)
         if self.speed75_enable:
-            self.histogram.play_speed = .025
+            self.histogram.play_speed = .015
+            self.quick_sort.play_speed = .015
             # print(self.histogram.play_speed)
         if self.speed1_enable:
-            self.histogram.play_speed = .0001
+            self.histogram.play_speed = .001
+            self.quick_sort.play_speed = .001
             # print(self.histogram.play_speed)
 
 
@@ -366,6 +370,7 @@ class A_start_helper():
         self.window = window
         self.a_star = a_star_build()
     def draw(self, pos):
+
         curr_size = imgui.core.get_window_size()
         window_size = self.window.get_size()
         
